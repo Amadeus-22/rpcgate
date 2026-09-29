@@ -1,0 +1,56 @@
+# rpcgate example configuration.
+# Process settings (listen address, log level, path to this file) come from
+# environment variables; see .env.example. In upstream URLs and client keys,
+# ${NAME} is replaced with environment variable NAME at startup, so provider
+# API keys stay out of this file. An unset referenced variable is a startup error.
+
+# Expected chain id. Upstreams reporting another chain are never used.
+# 31337 is anvil's default. Omit or set 0 to skip the check.
+chain_id: 31337
+
+upstreams:
+  - name: anvil-1
+    url: http://localhost:8546
+    weight: 1        # priority among equally fast upstreams (higher first)
+    max_rps: 0       # 0 = unlimited
+  - name: anvil-2
+    url: http://localhost:8547
+    weight: 1
+  - name: anvil-3
+    url: http://localhost:8548
+    weight: 1
+  # A hosted provider, with its key taken from the environment:
+  # - name: alchemy
+  #   url: https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}
+  #   weight: 2
+  #   max_rps: 25
+
+health:
+  interval: 2s         # eth_blockNumber probe period
+  timeout: 1s          # per probe; must not exceed interval
+  max_lag_blocks: 5    # beyond this an upstream is unhealthy for tip requests
+
+breaker:
+  failure_threshold: 5 # consecutive failures that open the breaker
+  cooldown: 10s        # open time before one trial call is allowed
+
+routing:
+  max_retries: 2           # extra attempts for reads, each on another upstream (0-5)
+  upstream_timeout: 5s     # per attempt
+  request_timeout: 10s     # whole request, retries included
+  max_batch_size: 100
+  max_body_bytes: 2097152  # 2 MiB
+
+cache:
+  max_bytes: 67108864      # 64 MiB; 0 disables the cache
+  finality_depth: 64       # blocks below the best head considered final
+
+clients:
+  # Clients without X-Api-Key share this bucket. Remove the block to require a key.
+  anonymous:
+    rps: 50
+    burst: 100
+  keys:
+    - key: ${RPCGATE_DEMO_KEY}
+      rps: 200
+      burst: 400
