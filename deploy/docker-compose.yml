@@ -1,0 +1,34 @@
+# Local test bed: rpcgate in front of three anvil nodes.
+#   docker compose -f deploy/docker-compose.yml up --build
+#   curl -s localhost:8545 -H 'content-type: application/json' \
+#     -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber"}'
+# Stop one node (docker compose stop anvil-2) and watch GET /v1/upstreams.
+
+x-anvil: &anvil
+  image: ghcr.io/foundry-rs/foundry:latest
+  entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545", "--block-time", "1"]
+  restart: unless-stopped
+
+services:
+  anvil-1:
+    <<: *anvil
+  anvil-2:
+    <<: *anvil
+  anvil-3:
+    <<: *anvil
+
+  rpcgate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8545:8545"
+    environment:
+      RPCGATE_CONFIG: /etc/rpcgate/config.yaml
+      RPCGATE_LOG_LEVEL: info
+    volumes:
+      - ./config.compose.yaml:/etc/rpcgate/config.yaml:ro
+    depends_on:
+      - anvil-1
+      - anvil-2
+      - anvil-3

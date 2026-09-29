@@ -1,0 +1,24 @@
+# Configuration used by deploy/docker-compose.yml: three local anvil nodes.
+chain_id: 31337
+
+upstreams:
+  - name: anvil-1
+    url: http://anvil-1:8545
+  - name: anvil-2
+    url: http://anvil-2:8545
+  - name: anvil-3
+    url: http://anvil-3:8545
+
+health:
+  interval: 1s
+  timeout: 500ms
+  max_lag_blocks: 5
+
+cache:
+  max_bytes: 16777216
+  finality_depth: 64
+
+clients:
+  anonymous:
+    rps: 100
+    burst: 200
